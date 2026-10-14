@@ -1,0 +1,44 @@
+<%- include('head', { leaflet: true, bodyClass: 'page-map' }) %>
+<div class="map-page">
+  <div id="map" aria-label="Carte des marchands"></div>
+
+  <div class="filters" id="filters">
+    <button class="filters-toggle" id="filtersToggle" type="button" aria-expanded="false">
+      <span>⚙️ Filtres</span><span class="filter-summary" id="filterSummary"></span>
+    </button>
+    <div class="filters-body" id="filtersBody">
+      <div class="search-row">
+        <input id="placeInput" type="search" placeholder="Ville ou adresse…" autocomplete="off">
+        <button id="placeBtn" type="button" class="btn btn-sm">Aller</button>
+      </div>
+      <div class="row2">
+        <label>Jour
+          <select id="daySelect">
+            <option value="0">Tous les jours</option>
+            <% days.forEach(function (d, i) { if (i > 0) { %><option value="<%= i %>"><%= d %></option><% } }) %>
+          </select>
+        </label>
+        <label>Distance
+          <select id="radiusSelect">
+            <option value="2">2 km</option>
+            <option value="5">5 km</option>
+            <option value="10" selected>10 km</option>
+            <option value="25">25 km</option>
+            <option value="50">50 km</option>
+            <option value="0">Partout</option>
+          </select>
+        </label>
+      </div>
+      <div class="chips-title">Catégories <button type="button" id="clearCats" class="link-btn small">Tout afficher</button></div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+
+  <button id="locateBtn" class="fab" type="button" title="Autour de moi" aria-label="Autour de moi">📍</button>
+  <div id="resultPill" class="pill" role="status">Chargement…</div>
+</div>
+
+<script>window.CATEGORIES = <%- categoriesJson %>;</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/map.js"></script>
+<%- include('foot') %>

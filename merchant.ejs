@@ -1,0 +1,49 @@
+<%- include('head', { leaflet: true }) %>
+<main class="container fiche">
+  <section class="hero" style="--c: <%= merchant.category_color %>">
+    <div class="hero-photo">
+      <% if (merchant.photo) { %><img src="/uploads/<%= merchant.photo %>" alt="<%= merchant.business_name %>"><% } else { %><span><%= merchant.category_icon %></span><% } %>
+    </div>
+    <div class="hero-info">
+      <span class="badge" style="background: <%= merchant.category_color %>"><%= merchant.category_icon %> <%= merchant.category_name %></span>
+      <h1><%= merchant.business_name %></h1>
+      <% if (merchant.description) { %><p class="lead"><%= merchant.description %></p><% } %>
+      <div class="actions">
+        <% if (merchant.phone) { %><a class="btn" href="tel:<%= merchant.phone.replace(/[^\d+]/g, '') %>">📞 <%= merchant.phone %></a><% } %>
+        <% if (merchant.email) { %><a class="btn btn-light" href="mailto:<%= merchant.email %>">✉️ <%= merchant.email %></a><% } %>
+        <button class="btn btn-light" type="button" id="shareBtn">🔗 Partager</button>
+        <a class="btn btn-light" href="/marchand/<%= merchant.slug %>/imprimer" target="_blank" rel="noopener">🖨️ Imprimer la fiche</a>
+        <% if (isOwner) { %><a class="btn btn-light" href="<%= user.role === 'admin' ? '/admin/marchands/' + merchant.id : '/espace' %>">✏️ Modifier</a><% } %>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Où me trouver ?</h2>
+    <% if (!sessions.length) { %>
+      <p class="muted">Aucune session de vente renseignée pour le moment.</p>
+    <% } else { %>
+      <ul class="schedule">
+        <% sessions.forEach(function (s) { %>
+          <li>
+            <span class="day"><%= days[s.weekday] %></span>
+            <span class="time"><%= s.start_time %> – <%= s.end_time %></span>
+            <span class="where">📍 <%= s.address %></span>
+          </li>
+        <% }) %>
+      </ul>
+      <div id="ficheMap" class="fiche-map"></div>
+    <% } %>
+  </section>
+</main>
+<script>
+  window.SESSIONS = <%- sessionsJson %>;
+  window.COLOR = <%- colorJson %>;
+  window.ICON = <%- iconJson %>;
+  window.FICHE_URL = <%- JSON.stringify(url).replace(/</g, '\\u003c') %>;
+  window.FICHE_NAME = <%- JSON.stringify(merchant.business_name).replace(/</g, '\\u003c') %>;
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/merchant.js"></script>
+<%- include('footer') %>
+<%- include('foot') %>

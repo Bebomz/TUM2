@@ -1,0 +1,24 @@
+<%- include('head') %>
+<main class="container narrow">
+  <a class="small" href="/admin/marchands">← Marchands</a>
+  <h1>Nouveau marchand</h1>
+  <form method="post" action="/admin/marchands/nouveau" class="card form"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Nom de l’entreprise <input name="business_name" maxlength="100" required></label>
+    <label>Catégorie
+      <select name="category_id" required>
+        <% categories.forEach(function (c) { %><option value="<%= c.id %>"><%= c.icon %> <%= c.name %></option><% }) %>
+      </select>
+    </label>
+    <div class="row2">
+      <label>Prénom <input name="first_name" maxlength="60"></label>
+      <label>Nom <input name="last_name" maxlength="60"></label>
+    </div>
+    <div class="row2">
+      <label>E-mail <input type="email" name="email" maxlength="120"></label>
+      <label>Téléphone <input type="tel" name="phone" maxlength="30"></label>
+    </div>
+    <button class="btn" type="submit">Créer puis ajouter les sessions</button>
+  </form>
+</main>
+<%- include('footer') %>
+<%- include('foot') %>

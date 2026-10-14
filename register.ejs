@@ -1,0 +1,31 @@
+<%- include('head') %>
+<main class="container narrow">
+  <h1>Inscription marchand</h1>
+  <p class="muted">Gratuit. Vos clients vous trouveront sur la carte selon vos jours et lieux de vente.</p>
+  <% if (locals.error) { %><div class="alert error"><%= error %></div><% } %>
+  <form method="post" action="/inscription" class="card form"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h3>Votre commerce <small>(affiché aux clients)</small></h3>
+    <label>Nom de l’entreprise <input name="business_name" value="<%= form.business_name || '' %>" maxlength="100" required></label>
+    <label>Catégorie de produit
+      <select name="category_id" required>
+        <option value="">— Choisir —</option>
+        <% categories.forEach(function (c) { %><option value="<%= c.id %>" <%= String(form.category_id) === String(c.id) ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %>
+      </select>
+    </label>
+    <h3>Vous <small>(jamais affiché)</small></h3>
+    <div class="row2">
+      <label>Prénom <input name="first_name" value="<%= form.first_name || '' %>" maxlength="60" required></label>
+      <label>Nom <input name="last_name" value="<%= form.last_name || '' %>" maxlength="60" required></label>
+    </div>
+    <h3>Compte</h3>
+    <label>E-mail <input type="email" name="email" value="<%= form.email || '' %>" required autocomplete="email"></label>
+    <div class="row2">
+      <label>Mot de passe <input type="password" name="password" minlength="8" required autocomplete="new-password"></label>
+      <label>Confirmation <input type="password" name="password2" minlength="8" required autocomplete="new-password"></label>
+    </div>
+    <button class="btn" type="submit">Créer mon compte</button>
+    <p class="small">Déjà inscrit ? <a href="/connexion">Se connecter</a></p>
+  </form>
+</main>
+<%- include('footer') %>
+<%- include('foot') %>

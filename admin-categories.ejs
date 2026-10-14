@@ -1,0 +1,30 @@
+<%- include('head') %>
+<main class="container">
+  <div class="page-head"><div><a class="small" href="/admin">← Administration</a><h1>Catégories</h1></div></div>
+
+  <section class="card">
+    <h2>Ajouter une catégorie</h2>
+    <form method="post" action="/admin/categories" class="cat-row"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input name="icon" value="🛒" maxlength="8" class="icon-input" aria-label="Icône (emoji)" title="Icône (emoji)">
+      <input name="name" placeholder="Nom de la catégorie" maxlength="60" required>
+      <input type="color" name="color" value="#ff6b35" aria-label="Couleur">
+      <button class="btn" type="submit">Ajouter</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Catégories existantes</h2>
+    <% categories.forEach(function (c) { %>
+      <form method="post" action="/admin/categories/<%= c.id %>" class="cat-row"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input name="icon" value="<%= c.icon %>" maxlength="8" class="icon-input" aria-label="Icône">
+        <input name="name" value="<%= c.name %>" maxlength="60" required>
+        <input type="color" name="color" value="<%= c.color %>" aria-label="Couleur">
+        <span class="muted small used"><%= c.used %> marchand<%= c.used > 1 ? 's' : '' %></span>
+        <button class="btn btn-sm" type="submit">Enregistrer</button>
+        <button class="btn btn-danger btn-sm" type="submit" formaction="/admin/categories/<%= c.id %>/supprimer" formnovalidate onclick="return confirm('Supprimer cette catégorie ?')">Supprimer</button>
+      </form>
+    <% }) %>
+  </section>
+</main>
+<%- include('footer') %>
+<%- include('foot') %>

@@ -1,0 +1,31 @@
+<%- include('head') %>
+<main class="container">
+  <div class="page-head">
+    <div><a class="small" href="/admin">← Administration</a><h1>Marchands <small>(<%= merchants.length %>)</small></h1></div>
+    <div class="actions"><a class="btn" href="/admin/marchands/nouveau">+ Nouveau marchand</a></div>
+  </div>
+  <form method="get" class="search-row card" style="padding:12px">
+    <input type="search" name="q" value="<%= q %>" placeholder="Rechercher (entreprise, e-mail, nom)…">
+    <button class="btn btn-light" type="submit">Rechercher</button>
+  </form>
+  <div class="card table-wrap">
+    <table>
+      <thead><tr><th>Entreprise</th><th>Catégorie</th><th>E-mail</th><th>Sessions</th><th>Compte</th><th></th></tr></thead>
+      <tbody>
+        <% merchants.forEach(function (m) { %>
+          <tr>
+            <td><b><%= m.business_name %></b></td>
+            <td><%= m.icon %> <%= m.category_name %></td>
+            <td><%= m.email %></td>
+            <td><%= m.nb_sessions %></td>
+            <td><%= m.user_id ? 'Oui' : 'Non' %></td>
+            <td><a class="btn btn-light btn-sm" href="/admin/marchands/<%= m.id %>">Modifier</a></td>
+          </tr>
+        <% }) %>
+        <% if (!merchants.length) { %><tr><td colspan="6" class="muted">Aucun marchand.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</main>
+<%- include('footer') %>
+<%- include('foot') %>

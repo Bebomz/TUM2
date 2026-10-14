@@ -1,0 +1,45 @@
+# Déploiement Render (Blueprint). Le disque persistant (nécessaire pour SQLite et les photos)
+# exige une instance payante (plan "starter" ou supérieur).
+services:
+  - type: web
+    name: trouverunmarchand
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: BASE_URL
+        value: https://trouverunmarchand.com   # à adapter (URL Render ou domaine personnalisé)
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: GEOCODE_COUNTRIES
+        value: fr
+      - key: GEOCODE_USER_AGENT
+        value: "trouverunmarchand.com/1.0 (contact: votre-email@exemple.fr)"

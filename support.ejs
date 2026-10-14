@@ -1,0 +1,33 @@
+<%- include('head') %>
+<main class="container narrow">
+  <h1>Soutenir le site</h1>
+  <% if (thanks) { %><div class="alert success">Merci infiniment pour votre soutien ! 🧡</div><% } %>
+  <p class="muted">Trouverunmarchand.com est gratuit pour les clients comme pour les marchands. Votre contribution finance l’hébergement, les cartes et les nouvelles fonctionnalités.</p>
+  <% if (stripeReady) { %>
+  <form method="post" action="/soutenir/checkout" class="card form"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="amounts">
+      <% [5, 10, 20, 50].forEach(function (a, i) { %>
+        <label class="amount"><input type="radio" name="amount" value="<%= a %>" <%= i === 1 ? 'checked' : '' %>><span><%= a %> €</span></label>
+      <% }) %>
+    </div>
+    <label>Ou un autre montant (€) <input type="number" name="amount_custom" min="1" max="1000" step="1" placeholder="Ex. 15" id="customAmount"></label>
+    <button class="btn" type="submit">Payer par carte</button>
+    <p class="small muted">Paiement sécurisé par Stripe.</p>
+  </form>
+  <script>
+    document.querySelector('form[action="/soutenir/checkout"]').addEventListener('submit', function () {
+      var c = document.getElementById('customAmount').value;
+      if (c) {
+        Array.prototype.forEach.call(this.querySelectorAll('input[type=radio]'), function (r) { r.disabled = true; });
+        var h = document.createElement('input');
+        h.type = 'hidden'; h.name = 'amount'; h.value = c;
+        this.appendChild(h);
+      }
+    });
+  </script>
+  <% } else { %>
+  <div class="alert">Le paiement en ligne n’est pas encore activé sur ce site.</div>
+  <% } %>
+</main>
+<%- include('footer') %>
+<%- include('foot') %>

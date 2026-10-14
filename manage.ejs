@@ -1,0 +1,117 @@
+<%- include('head', { leaflet: true }) %>
+<main class="container">
+  <div class="page-head">
+    <div>
+      <% if (admin) { %><a class="small" href="/admin/marchands">← Tous les marchands</a><% } %>
+      <h1><%= admin ? merchant.business_name : 'Mon espace marchand' %></h1>
+    </div>
+    <div class="actions">
+      <a class="btn btn-light" href="/marchand/<%= merchant.slug %>" target="_blank" rel="noopener">👁️ Voir la fiche</a>
+      <a class="btn btn-light" href="/marchand/<%= merchant.slug %>/imprimer" target="_blank" rel="noopener">🖨️ Imprimer la fiche</a>
+      <% if (!admin) { %><a class="btn btn-light" href="/soutenir">🧡 Soutenir le site</a><% } %>
+    </div>
+  </div>
+
+  <section class="card" id="profil">
+    <h2>Mon profil</h2>
+    <form method="post" action="<%= base %>/profil" enctype="multipart/form-data" class="form"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h3>Affiché aux clients</h3>
+      <div class="photo-row">
+        <div class="photo-preview">
+          <% if (merchant.photo) { %><img src="/uploads/<%= merchant.photo %>" alt="Photo du marchand"><% } else { %><span>📷</span><% } %>
+        </div>
+        <div>
+          <label>Photo (JPEG, PNG ou WebP, 5 Mo max)
+            <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+          </label>
+          <% if (merchant.photo) { %><label class="check"><input type="checkbox" name="remove_photo" value="1"> Supprimer la photo actuelle</label><% } %>
+        </div>
+      </div>
+      <label>Nom de l’entreprise <input name="business_name" value="<%= merchant.business_name %>" maxlength="100" required></label>
+      <label>Catégorie de produit
+        <select name="category_id" required>
+          <% categories.forEach(function (c) { %><option value="<%= c.id %>" <%= c.id === merchant.category_id ? 'selected' : '' %>><%= c.icon %> <%= c.name %></option><% }) %>
+        </select>
+      </label>
+      <label>Présentation (facultatif) <textarea name="description" rows="3" maxlength="500" placeholder="Quelques mots sur vos produits…"><%= merchant.description %></textarea></label>
+
+      <h3>Jamais affiché aux clients</h3>
+      <div class="row2">
+        <label>Prénom <input name="first_name" value="<%= merchant.first_name %>" maxlength="60" <%= admin ? '' : 'required' %>></label>
+        <label>Nom <input name="last_name" value="<%= merchant.last_name %>" maxlength="60" <%= admin ? '' : 'required' %>></label>
+      </div>
+
+      <h3>Contact <small>(affiché uniquement si vous cochez)</small></h3>
+      <div class="row2">
+        <div>
+          <label>E-mail de contact <input type="email" name="email" value="<%= merchant.email %>" maxlength="120"></label>
+          <label class="check"><input type="checkbox" name="show_email" value="1" <%= merchant.show_email ? 'checked' : '' %>> Afficher aux clients</label>
+        </div>
+        <div>
+          <label>Téléphone <input type="tel" name="phone" value="<%= merchant.phone %>" maxlength="30"></label>
+          <label class="check"><input type="checkbox" name="show_phone" value="1" <%= merchant.show_phone ? 'checked' : '' %>> Afficher aux clients</label>
+        </div>
+      </div>
+      <button class="btn" type="submit">Enregistrer le profil</button>
+    </form>
+  </section>
+
+  <section class="card" id="sessions">
+    <h2>Mes sessions de vente</h2>
+    <% if (!sessions.length) { %><p class="muted">Aucune session pour l’instant : ajoutez votre premier lieu de vente ci-dessous pour apparaître sur la carte.</p><% } %>
+    <ul class="session-list">
+      <% sessions.forEach(function (s) { %>
+        <li>
+          <div>
+            <b><%= days[s.weekday] %></b> · <%= s.start_time %> – <%= s.end_time %><br>
+            <span class="muted small">📍 <%= s.address %></span>
+          </div>
+          <form method="post" action="<%= base %>/sessions/<%= s.id %>/supprimer" onsubmit="return confirm('Supprimer cette session ?')"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn-danger btn-sm" type="submit">Supprimer</button>
+          </form>
+        </li>
+      <% }) %>
+    </ul>
+
+    <h3>Ajouter une session</h3>
+    <form method="post" action="<%= base %>/sessions" class="form" id="sessionForm"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>Adresse du lieu de vente
+        <div class="search-row">
+          <input id="addr" name="address" placeholder="Ex. 12 place de la Victoire, Bordeaux" maxlength="250" required autocomplete="off">
+          <button type="button" class="btn btn-light" id="checkAddr">Vérifier</button>
+        </div>
+      </label>
+      <div id="addrResults" class="addr-results"></div>
+      <p id="addrStatus" class="small"></p>
+      <div id="mapBox" hidden>
+        <div id="miniMap"></div>
+        <p class="small muted">Vous pouvez déplacer le repère pour affiner l’emplacement exact.</p>
+      </div>
+      <input type="hidden" name="lat" id="lat">
+      <input type="hidden" name="lng" id="lng">
+      <div class="row3">
+        <label>Jour
+          <select name="weekday" required>
+            <% days.forEach(function (d, i) { if (i > 0) { %><option value="<%= i %>"><%= d %></option><% } }) %>
+          </select>
+        </label>
+        <label>Début <input type="time" name="start_time" value="08:00" required></label>
+        <label>Fin <input type="time" name="end_time" value="13:00" required></label>
+      </div>
+      <button class="btn" type="submit" id="addSession" disabled>Ajouter cette session</button>
+      <p class="small muted">Le bouton s’active une fois l’adresse vérifiée et l’emplacement validé sur la carte.</p>
+    </form>
+  </section>
+
+  <section class="card danger-zone">
+    <h2>Supprimer <%= admin ? 'ce marchand' : 'mon compte' %></h2>
+    <p class="muted small">Action définitive : fiche, photo et sessions seront supprimées.</p>
+    <form method="post" action="<%= base %>/supprimer" onsubmit="return confirm('Supprimer définitivement ? Cette action est irréversible.')"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button class="btn btn-danger" type="submit">Supprimer définitivement</button>
+    </form>
+  </section>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/manage.js"></script>
+<%- include('footer') %>
+<%- include('foot') %>

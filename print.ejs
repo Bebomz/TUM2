@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · Trouver un marchand</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/print.css">
+</head>
+<body style="--c: <%= merchant.category_color %>">
+<div class="toolbar no-print">
+  <button onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button>
+  <a href="/marchand/<%= merchant.slug %>">← Retour à la fiche</a>
+</div>
+
+<div class="sheet">
+  <div class="banner top">
+    <span class="pin">📍</span>
+    <div><b>Trouver</b>unmarchand<span class="tld">.com</span></div>
+    <small>Retrouvez-moi sur la carte des marchands</small>
+  </div>
+
+  <div class="content">
+    <div class="photo">
+      <% if (merchant.photo) { %><img src="/uploads/<%= merchant.photo %>" alt=""><% } else { %><span><%= merchant.category_icon %></span><% } %>
+    </div>
+
+    <span class="badge"><%= merchant.category_icon %> <%= merchant.category_name %></span>
+    <h1><%= merchant.business_name %></h1>
+    <% if (merchant.description) { %><p class="lead"><%= merchant.description %></p><% } %>
+
+    <% if (sessions.length) { %>
+    <div class="block">
+      <h2>Où et quand me trouver</h2>
+      <ul class="schedule<%= sessions.length > 4 ? ' cols2' : '' %>">
+        <% sessions.forEach(function (s) { %>
+          <li><span class="day"><%= days[s.weekday] %></span><span class="time"><%= s.start_time %> – <%= s.end_time %></span><span class="where"><%= s.address %></span></li>
+        <% }) %>
+      </ul>
+    </div>
+    <% } %>
+
+    <% if (merchant.phone || merchant.email) { %>
+    <div class="contacts">
+      <% if (merchant.phone) { %><span>📞 <%= merchant.phone %></span><% } %>
+      <% if (merchant.email) { %><span>✉️ <%= merchant.email %></span><% } %>
+    </div>
+    <% } %>
+
+    <div class="qr-card">
+      <div class="qr"><%- qrSvg %></div>
+      <div>
+        <h3>Scannez pour me retrouver</h3>
+        <p>Mes horaires, mes lieux de vente et ma fiche à jour sur votre téléphone.</p>
+        <p class="url"><%= url.replace(/^https?:\/\//, '') %></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="banner bottom">
+    <div><b>Trouver</b>unmarchand<span class="tld">.com</span></div>
+    <small>Trouvez les marchands près de chez vous · par catégorie et par jour</small>
+  </div>
+</div>
+<script src="/js/print.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<%- include('head') %>
+<main class="container narrow">
+  <h1>Connexion</h1>
+  <p class="muted">Espace réservé aux marchands et à l’administrateur.</p>
+  <% if (locals.error) { %><div class="alert error"><%= error %></div><% } %>
+  <form method="post" action="/connexion" class="card form"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>E-mail <input type="email" name="email" value="<%= email %>" required autocomplete="email"></label>
+    <label>Mot de passe <input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="btn" type="submit">Se connecter</button>
+    <p class="small"><a href="/mot-de-passe-oublie">Mot de passe oublié ?</a> · <a href="/inscription">Créer un compte marchand</a></p>
+  </form>
+</main>
+<%- include('footer') %>
+<%- include('foot') %>

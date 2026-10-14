@@ -1,0 +1,12 @@
+<%- include('head') %>
+<main class="container narrow">
+  <h1>Mot de passe oublié</h1>
+  <p class="muted">Saisissez votre e-mail : nous vous envoyons un lien pour choisir un nouveau mot de passe.</p>
+  <form method="post" action="/mot-de-passe-oublie" class="card form"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>E-mail <input type="email" name="email" required autocomplete="email"></label>
+    <button class="btn" type="submit">Envoyer le lien</button>
+    <p class="small"><a href="/connexion">Retour à la connexion</a></p>
+  </form>
+</main>
+<%- include('footer') %>
+<%- include('foot') %>
