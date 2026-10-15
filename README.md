@@ -53,3 +53,21 @@ Tous les fichiers sont à la racine (aucun sous-dossier) :
 ## Données de démonstration (région bordelaise)
 
 `npm run seed:demo` crée 30 marchands **fictifs** (2 à 4 sessions chacun, sur de vraies places et centres-villes de Bordeaux et de sa région) ; relancer la commande les recrée sans doublon. `npm run seed:demo:remove` les supprime. Les comptes sont `demo01@demo.trouverunmarchand.test` … `demo30@…` avec le mot de passe `demo1234`, et les téléphones utilisent les plages fictives de l'ARCEP. Ne lancez pas cette commande sur la base de production réelle, ou supprimez-les ensuite (aussi possible depuis l'espace admin).
+
+## Signalement d'absence et suspension des sessions
+
+**Signalement par un client.** Dans la mini fiche d'un marqueur, un lien « Il n'est pas à son emplacement ? » apparaît **uniquement pendant les horaires de la session** (le serveur revérifie, fuseau `APP_TIMEZONE`). Le client peut ajouter une précision ; aucune donnée personnelle n'est demandée (seule une empreinte de l'IP est conservée, pour limiter les abus). Alors :
+- le marchand reçoit un **e-mail** (adresse de son compte) rappelant qu'il peut suspendre ses sessions ;
+- le marchand reçoit un **message WhatsApp** s'il a coché « Me prévenir par WhatsApp » dans son profil (consentement exigé par WhatsApp) et que WhatsApp est configuré ;
+- les **administrateurs** reçoivent un e-mail ; la liste est dans `/admin/signalements` (marquer « traité »).
+
+Anti-abus : champ piège contre les robots, 10 signalements par heure et par IP, un seul signalement par client et par session toutes les 6 h, et le marchand n'est pas ré-alerté pour la même session plus d'une fois toutes les 4 h. Les e-mails utilisent la configuration SMTP ; sans SMTP ils apparaissent dans les logs.
+
+**Configurer WhatsApp (API Cloud de Meta).** WhatsApp n'autorise l'envoi à l'initiative de l'entreprise qu'avec un **modèle de message approuvé** :
+1. Créez un compte Meta Business et une application « WhatsApp Business » (developers.facebook.com), puis un numéro d'envoi : notez son *Phone number ID* et créez un jeton d'accès permanent.
+2. Dans le gestionnaire WhatsApp, créez un modèle nommé `signalement_absence`, catégorie *Utilitaire*, langue française, avec ce corps :
+   `Bonjour, un client signale ne pas avoir trouvé « {{1}} » à l'emplacement prévu : {{2}}. Si vous êtes absent(e), suspendez vos sessions depuis votre espace marchand sur trouverunmarchand.com.`
+3. Renseignez `WHATSAPP_TOKEN` et `WHATSAPP_PHONE_ID` (et `WHATSAPP_TEMPLATE` si vous avez choisi un autre nom). L'envoi WhatsApp se facture selon la grille de Meta.
+Sans ces variables, seuls les e-mails sont envoyés.
+
+**Suspension des sessions.** Dans « Mes sessions de vente », chaque session a un bouton *Suspendre / Réactiver*, avec *Tout suspendre / Tout réactiver* pour les vacances ou une maladie. Une session suspendue disparaît de la carte, de la fiche publique et de la fiche imprimable, mais reste dans l'espace du marchand. Une session suspendue ne peut pas être signalée.

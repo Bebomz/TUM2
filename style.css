@@ -159,3 +159,28 @@ th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-s
 .popup a.btn-light { color: var(--ink); }
 .pm-fiche { width: 100%; }
 .popup > .pm-addr { margin-bottom: 8px; }
+
+/* Sessions suspendues, actions */
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.session-list li { flex-wrap: wrap; }
+.session-list li.is-off > div:first-child { opacity: .6; }
+.tag-off { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #fff3e0; color: var(--warn); border: 1px solid #ffe0b2; font-size: .72rem; font-weight: 700; }
+.pause-bar { display: flex; gap: 10px 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 10px; background: #fff8e1; border: 1px solid #ffe9a8; border-radius: 12px; }
+.pause-bar p { margin: 0; flex: 1 1 260px; }
+tr.is-off td { opacity: .6; }
+
+/* Signalement d'absence (carte) */
+.pm-report { width: 100%; background: none; border: 0; padding: 6px; font: inherit; font-size: .8rem; font-weight: 600; color: var(--muted); cursor: pointer; text-decoration: underline; }
+.pm-report:hover { color: var(--danger); }
+.modal { position: fixed; inset: 0; z-index: 4000; display: grid; place-items: center; padding: 16px; background: rgba(20,22,30,.55); }
+.modal[hidden] { display: none; }
+.modal-box { width: min(440px, 100%); max-height: 92dvh; overflow: auto; background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.modal-box h2 { margin-bottom: .3em; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.report-sessions { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
+.report-sessions label { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1.5px solid #e4d6ca; border-radius: 12px; font-weight: 600; cursor: pointer; }
+.report-sessions input { width: auto; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.report-sessions[hidden] { display: none; }
+#reportMsg { margin: 0; min-height: 1.2em; }
+.modal-actions .btn { flex: 1 1 140px; }

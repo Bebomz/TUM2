@@ -56,11 +56,43 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_weekday ON sessions(weekday);
 CREATE INDEX IF NOT EXISTS idx_sessions_merchant ON sessions(merchant_id);
+
+-- Signalements de clients : "je n'ai pas trouvé ce marchand à son emplacement".
+-- La session est recopiée (elle peut être supprimée ensuite). Seule une empreinte de l'IP est conservée.
+CREATE TABLE IF NOT EXISTS reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER REFERENCES sessions(id) ON DELETE SET NULL,
+  merchant_id INTEGER NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
+  address TEXT NOT NULL,
+  weekday INTEGER NOT NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  comment TEXT NOT NULL DEFAULT '',
+  ip_hash TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'new',
+  merchant_emailed_at TEXT,
+  merchant_whatsapped_at TEXT,
+  admin_emailed_at TEXT,
+  notify_error TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_reports_session ON reports(session_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_reports_merchant ON reports(merchant_id, created_at);
 `);
 
-// Migration : adresse courte (numéro, rue, ville) affichée dans la mini fiche de la carte
-if (!db.prepare("PRAGMA table_info(sessions)").all().some((c) => c.name === 'short_address')) {
-  db.exec('ALTER TABLE sessions ADD COLUMN short_address TEXT');
+// Migrations : colonnes ajoutées après la première version (bases existantes conservées)
+//   short_address    : adresse courte affichée dans la mini fiche de la carte
+//   active           : 0 = session suspendue par le marchand (vacances, maladie…)
+//   notify_whatsapp  : 1 = le marchand accepte les alertes WhatsApp (opt-in exigé par WhatsApp)
+const MIGRATIONS = [
+  ['sessions', 'short_address', 'TEXT'],
+  ['sessions', 'active', 'INTEGER NOT NULL DEFAULT 1'],
+  ['merchants', 'notify_whatsapp', 'INTEGER NOT NULL DEFAULT 0'],
+];
+for (const [table, column, ddl] of MIGRATIONS) {
+  if (!db.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`);
+  }
 }
 
 // Catégories par défaut

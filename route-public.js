@@ -19,7 +19,7 @@ function loadMerchant(slug) {
     )
     .get(slug);
   if (!m) return null;
-  const sessions = db.prepare('SELECT * FROM sessions WHERE merchant_id = ? ORDER BY weekday, start_time').all(m.id);
+  const sessions = db.prepare('SELECT * FROM sessions WHERE merchant_id = ? AND active = 1 ORDER BY weekday, start_time').all(m.id);
   // Seules les informations publiques sont exposées aux vues
   const pub = {
     id: m.id,

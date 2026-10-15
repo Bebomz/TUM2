@@ -4,6 +4,9 @@ const { db } = require('./db');
 const { haversine } = require('./util');
 const { geocode } = require('./geocode');
 const { groupByPlace } = require('./places');
+const crypto = require('crypto');
+const { processReport } = require('./report');
+const { sendMail } = require('./mail');
 
 const r = express.Router();
 
@@ -23,13 +26,13 @@ r.get('/sessions', (req, res) => {
   const lng = parseFloat(req.query.lng);
   const radius = parseFloat(req.query.radius);
 
-  let sql = `SELECT s.address, s.short_address, s.lat, s.lng, s.weekday, s.start_time, s.end_time,
+  let sql = `SELECT s.id, s.address, s.short_address, s.lat, s.lng, s.weekday, s.start_time, s.end_time,
       m.id AS mid, m.slug, m.business_name, m.photo,
       c.id AS cid, c.name AS cname, c.color, c.icon
     FROM sessions s
     JOIN merchants m ON m.id = s.merchant_id
     JOIN categories c ON c.id = m.category_id
-    WHERE 1=1`;
+    WHERE s.active = 1`;
   const params = [];
   if (day >= 1 && day <= 7) {
     sql += ' AND s.weekday = ?';
@@ -61,6 +64,32 @@ r.get('/geocode', geoLimiter, async (req, res) => {
     res.json({ results: await geocode(q) });
   } catch (e) {
     res.status(502).json({ error: 'Le service de recherche d’adresse est momentanément indisponible.' });
+  }
+});
+
+// Signalement d'absence par un client (anonyme). Limité par IP ; voir report.js pour les règles.
+const reportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de signalements depuis cette connexion. Réessayez plus tard.' },
+});
+
+r.post('/reports', reportLimiter, async (req, res, next) => {
+  try {
+    if (req.body.website) return res.json({ ok: true }); // champ piège : un robot l'a rempli
+    const sessionId = parseInt(req.body.session_id, 10);
+    if (!Number.isInteger(sessionId)) return res.status(400).json({ error: 'Session invalide.' });
+    const comment = String(req.body.comment || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+    const ipHash = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'dev').update(String(req.ip || '')).digest('hex').slice(0, 32);
+    const out = await processReport({ db, sessionId, comment, ipHash, baseUrl: res.locals.baseUrl, sendMail });
+    if (out.status === 'ok') return res.json({ ok: true, message: 'Merci ! Le marchand a été prévenu.' });
+    if (out.status === 'duplicate') return res.json({ ok: true, message: 'Merci, vous aviez déjà signalé cette absence.' });
+    if (out.status === 'not_reportable') return res.status(409).json({ error: 'Cette session n’est pas en cours en ce moment : le signalement n’est possible que pendant les horaires de vente.' });
+    return res.status(404).json({ error: 'Session introuvable ou suspendue.' });
+  } catch (e) {
+    next(e);
   }
 });
 

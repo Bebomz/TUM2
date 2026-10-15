@@ -43,3 +43,11 @@ services:
         value: fr
       - key: GEOCODE_USER_AGENT
         value: "trouverunmarchand.com/1.0 (contact: votre-email@exemple.fr)"
+      - key: REPORT_ADMIN_EMAIL
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_ID
+        sync: false
+      - key: WHATSAPP_TEMPLATE
+        value: signalement_absence

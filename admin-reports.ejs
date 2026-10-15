@@ -1,0 +1,34 @@
+<%- include('head') %>
+<main class="container">
+  <div class="page-head"><div><a class="small" href="/admin">← Administration</a><h1>Signalements <small>(<%= reports.length %>)</small></h1></div></div>
+  <p class="muted small">Un client indique ne pas avoir trouvé un marchand pendant ses horaires de vente. Le marchand et les administrateurs sont prévenus par e-mail ; le marchand aussi par WhatsApp s’il l’a accepté.</p>
+  <div class="card table-wrap">
+    <table>
+      <thead><tr><th>Date</th><th>Marchand</th><th>Session</th><th>Commentaire</th><th>Alertes</th><th>Statut</th></tr></thead>
+      <tbody>
+        <% reports.forEach(function (r) { %>
+          <tr class="<%= r.status === 'new' ? '' : 'is-off' %>">
+            <td><%= r.when %></td>
+            <td><a href="/admin/marchands/<%= r.merchant_id %>"><b><%= r.business_name %></b></a></td>
+            <td><%= days[r.weekday] %> <%= r.start_time %>–<%= r.end_time %><br><span class="muted small"><%= r.address %></span></td>
+            <td style="white-space:normal;max-width:260px"><%= r.comment || '—' %></td>
+            <td>
+              <span title="E-mail au marchand"><%= r.merchant_emailed_at ? '✉️✅' : '✉️—' %></span>
+              <span title="WhatsApp au marchand"><%= r.merchant_whatsapped_at ? '💬✅' : '💬—' %></span>
+              <span title="E-mail à l’administrateur"><%= r.admin_emailed_at ? '🛡️✅' : '🛡️—' %></span>
+              <% if (r.notify_error) { %><br><span class="warn small" title="<%= r.notify_error %>">⚠️ échec d’envoi</span><% } %>
+            </td>
+            <td>
+              <form method="post" action="/admin/signalements/<%= r.id %>/traite" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="status" value="<%= r.status === 'new' ? 'done' : 'new' %>">
+                <button class="btn btn-light btn-sm" type="submit"><%= r.status === 'new' ? '✔ Marquer traité' : '↩ Rouvrir' %></button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+        <% if (!reports.length) { %><tr><td colspan="6" class="muted">Aucun signalement.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</main>
+<%- include('footer') %>
+<%- include('foot') %>

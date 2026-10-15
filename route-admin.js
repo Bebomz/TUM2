@@ -11,8 +11,27 @@ r.get('/', (req, res) => {
     merchants: db.prepare('SELECT COUNT(*) n FROM merchants').get().n,
     sessions: db.prepare('SELECT COUNT(*) n FROM sessions').get().n,
     categories: db.prepare('SELECT COUNT(*) n FROM categories').get().n,
+    reports: db.prepare("SELECT COUNT(*) n FROM reports WHERE status = 'new'").get().n,
   };
   res.render('admin-index', { title: 'Administration', stats });
+});
+
+// ---- Signalements de clients ----
+r.get('/signalements', (req, res) => {
+  const reports = db
+    .prepare(
+      `SELECT r.*, m.business_name, m.slug FROM reports r JOIN merchants m ON m.id = r.merchant_id
+       ORDER BY (r.status = 'new') DESC, r.created_at DESC LIMIT 200`
+    )
+    .all()
+    .map((x) => ({ ...x, when: new Date(x.created_at.replace(' ', 'T') + 'Z').toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' }) }));
+  res.render('admin-reports', { title: 'Signalements', reports });
+});
+
+r.post('/signalements/:id/traite', (req, res) => {
+  const status = req.body.status === 'new' ? 'new' : 'done';
+  db.prepare('UPDATE reports SET status = ? WHERE id = ?').run(status, +req.params.id);
+  res.redirect('/admin/signalements');
 });
 
 // ---- Catégories ----

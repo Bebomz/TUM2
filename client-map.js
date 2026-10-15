@@ -4,6 +4,7 @@
   var todayIdx = ((new Date().getDay() + 6) % 7) + 1;
   var state = { day: todayIdx, radius: 10, cats: new Set(), pos: null, fitted: false };
   var seq = 0;
+  var lastLocations = [];
 
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) {
@@ -69,13 +70,24 @@
       '<span class="pm-cat" style="background:' + esc(m.category.color) + '">' + esc(m.category.icon) + ' ' + esc(m.category.name) + '</span>' +
       '<span class="pm-hours">🕒 ' + hoursLines(m).map(esc).join('<br>') + '</span></div></div>';
   }
-  function popupHtml(loc) {
+  // Sessions "en cours" d'un marchand, d'après l'horloge de l'appareil (le serveur revérifie).
+  function reportable(m) {
+    var d = new Date();
+    var wd = ((d.getDay() + 6) % 7) + 1;
+    var t = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    return m.sessions.filter(function (s) { return s.id && s.weekday === wd && s.start <= t && t <= s.end; });
+  }
+  function popupHtml(loc, idx) {
     var html = '<div class="popup">';
     if (loc.count > 1) html += addrHtml(loc); // plusieurs marchands : l'adresse est commune, en tête
     loc.merchants.forEach(function (m) {
       html += '<div class="pm">' + merchantHtml(m);
       if (loc.count === 1) html += addrHtml(loc);
-      html += '<a class="btn btn-light btn-sm pm-fiche" href="/marchand/' + encodeURIComponent(m.slug) + '">Voir la fiche complète</a></div>';
+      html += '<a class="btn btn-light btn-sm pm-fiche" href="/marchand/' + encodeURIComponent(m.slug) + '">Voir la fiche complète</a>';
+      if (reportable(m).length) {
+        html += '<button type="button" class="pm-report" data-place="' + idx + '" data-mid="' + m.id + '">🚩 Il n’est pas à son emplacement ?</button>';
+      }
+      html += '</div>';
     });
     return html + '</div>';
   }
@@ -97,9 +109,10 @@
   function render(data) {
     markers.clearLayers();
     var pts = [];
-    data.locations.forEach(function (loc) {
+    lastLocations = data.locations;
+    data.locations.forEach(function (loc, idx) {
       var mk = L.marker([loc.lat, loc.lng], { icon: makeIcon(loc), riseOnHover: true });
-      mk.bindPopup(popupHtml(loc), { maxWidth: 300, minWidth: 250 });
+      mk.bindPopup(popupHtml(loc, idx), { maxWidth: 300, minWidth: 250 });
       markers.addLayer(mk);
       pts.push([loc.lat, loc.lng]);
     });
@@ -216,6 +229,66 @@
   $('placeInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') searchPlace(); });
   $('locateBtn').addEventListener('click', function () { locate(false); });
   map.on('click', function () { openFilters(false); });
+
+  // ---------- Signalement d'absence ----------
+  var modal = $('reportModal');
+  var form = $('reportForm');
+  var msg = $('reportMsg');
+  function closeReport() { modal.hidden = true; }
+  function openReport(m) {
+    var list = reportable(m);
+    if (!list.length) return;
+    $('reportIntro').textContent = m.name + ' devrait être présent en ce moment. Vous ne le trouvez pas ? Nous le prévenons.';
+    var box = $('reportSessions');
+    box.innerHTML = '';
+    list.forEach(function (s, i) {
+      var l = document.createElement('label');
+      var r = document.createElement('input');
+      r.type = 'radio'; r.name = 'session_id'; r.value = s.id; r.checked = i === 0;
+      l.appendChild(r);
+      l.appendChild(document.createTextNode(s.start + '–' + s.end));
+      box.appendChild(l);
+    });
+    box.hidden = list.length < 2; // une seule session : pas de choix à proposer
+    form.comment.value = '';
+    msg.textContent = ''; msg.className = 'small';
+    $('reportSend').disabled = false;
+    modal.hidden = false;
+  }
+  // Phase de capture : fonctionne même si Leaflet bloque la propagation des clics dans la popup.
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.pm-report');
+    if (!b) return;
+    var loc = lastLocations[+b.getAttribute('data-place')];
+    var m = loc && loc.merchants.filter(function (x) { return x.id === +b.getAttribute('data-mid'); })[0];
+    if (m) openReport(m);
+  }, true);
+  $('reportCancel').addEventListener('click', closeReport);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeReport(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) closeReport(); });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var p = new URLSearchParams();
+    new FormData(form).forEach(function (v, k) { p.append(k, v); });
+    p.append('_csrf', window.CSRF || '');
+    $('reportSend').disabled = true;
+    msg.className = 'small'; msg.textContent = 'Envoi…';
+    fetch('/api/reports', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: p.toString() })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (x) {
+        if (x.ok) {
+          msg.className = 'small ok'; msg.textContent = '✅ ' + (x.d.message || 'Merci !');
+          setTimeout(closeReport, 2500);
+        } else {
+          msg.className = 'small warn'; msg.textContent = x.d.error || 'Envoi impossible.';
+          $('reportSend').disabled = false;
+        }
+      })
+      .catch(function () {
+        msg.className = 'small warn'; msg.textContent = 'Envoi impossible. Rechargez la page puis réessayez.';
+        $('reportSend').disabled = false;
+      });
+  });
 
   updateSummary();
   locate(true);

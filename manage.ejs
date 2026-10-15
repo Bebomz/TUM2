@@ -50,6 +50,7 @@
         <div>
           <label>Téléphone <input type="tel" name="phone" value="<%= merchant.phone %>" maxlength="30"></label>
           <label class="check"><input type="checkbox" name="show_phone" value="1" <%= merchant.show_phone ? 'checked' : '' %>> Afficher aux clients</label>
+          <label class="check"><input type="checkbox" name="notify_whatsapp" value="1" <%= merchant.notify_whatsapp ? 'checked' : '' %>> Me prévenir par WhatsApp si un client ne me trouve pas <small class="muted">(jamais affiché)</small></label>
         </div>
       </div>
       <button class="btn" type="submit">Enregistrer le profil</button>
@@ -59,16 +60,27 @@
   <section class="card" id="sessions">
     <h2>Mes sessions de vente</h2>
     <% if (!sessions.length) { %><p class="muted">Aucune session pour l’instant : ajoutez votre premier lieu de vente ci-dessous pour apparaître sur la carte.</p><% } %>
+    <% if (sessions.length) { %>
+    <div class="pause-bar">
+      <p class="small muted">En vacances ou malade ? Suspendez vos sessions : elles disparaissent de la carte et de votre fiche jusqu’à ce que vous les réactiviez.</p>
+      <div class="row-actions">
+        <form method="post" action="<%= base %>/sessions-etat" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="active" value="0"><button class="btn btn-light btn-sm" type="submit">⏸️ Tout suspendre</button></form>
+        <form method="post" action="<%= base %>/sessions-etat" class="inline"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="active" value="1"><button class="btn btn-light btn-sm" type="submit">▶️ Tout réactiver</button></form>
+      </div>
+    </div>
+    <% } %>
     <ul class="session-list">
       <% sessions.forEach(function (s) { %>
-        <li>
+        <li class="<%= s.active ? '' : 'is-off' %>">
           <div>
-            <b><%= days[s.weekday] %></b> · <%= s.start_time %> – <%= s.end_time %><br>
+            <b><%= days[s.weekday] %></b> · <%= s.start_time %> – <%= s.end_time %>
+            <% if (!s.active) { %><span class="tag-off">Suspendue</span><% } %><br>
             <span class="muted small">📍 <%= s.address %></span>
           </div>
-          <form method="post" action="<%= base %>/sessions/<%= s.id %>/supprimer" onsubmit="return confirm('Supprimer cette session ?')"><input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button class="btn btn-danger btn-sm" type="submit">Supprimer</button>
-          </form>
+          <div class="row-actions">
+            <form method="post" action="<%= base %>/sessions/<%= s.id %>/etat"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="active" value="<%= s.active ? 0 : 1 %>"><button class="btn btn-light btn-sm" type="submit"><%= s.active ? '⏸️ Suspendre' : '▶️ Réactiver' %></button></form>
+            <form method="post" action="<%= base %>/sessions/<%= s.id %>/supprimer" onsubmit="return confirm('Supprimer cette session ?')"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-danger btn-sm" type="submit">Supprimer</button></form>
+          </div>
         </li>
       <% }) %>
     </ul>
@@ -103,6 +115,24 @@
       <p class="small muted">Le bouton s’active une fois l’adresse vérifiée et l’emplacement validé sur la carte.</p>
     </form>
   </section>
+
+  <% if (locals.reports && reports.length) { %>
+  <section class="card" id="signalements">
+    <h2>Signalements de clients</h2>
+    <p class="muted small">Un client a indiqué ne pas vous avoir trouvé pendant vos horaires. Si vous êtes absent, suspendez la session concernée.</p>
+    <ul class="session-list">
+      <% reports.forEach(function (r) { %>
+        <li>
+          <div>
+            <b><%= days[r.weekday] %> <%= r.start_time %> – <%= r.end_time %></b> <span class="muted small">· signalé le <%= r.when %></span><br>
+            <span class="muted small">📍 <%= r.address %></span>
+            <% if (r.comment) { %><br><span class="small">« <%= r.comment %> »</span><% } %>
+          </div>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
 
   <section class="card danger-zone">
     <h2>Supprimer <%= admin ? 'ce marchand' : 'mon compte' %></h2>

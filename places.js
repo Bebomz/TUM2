@@ -55,7 +55,7 @@ function groupByPlace(rows) {
       };
       p.merchants.set(x.mid, m);
     }
-    m.sessions.push({ weekday: x.weekday, start: x.start_time, end: x.end_time });
+    m.sessions.push({ id: x.id, weekday: x.weekday, start: x.start_time, end: x.end_time });
   }
 
   return places.map((p) => ({

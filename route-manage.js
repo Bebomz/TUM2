@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { db, DATA_DIR } = require('./db');
 const { TIME_RE, EMAIL_RE } = require('./util');
 const { isValid: csrfValid } = require('./csrf');
+const { normalizePhone } = require('./report');
 
 const UPLOADS = path.join(DATA_DIR, 'uploads');
 const EXT = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
@@ -61,6 +62,10 @@ module.exports = function makeManage({ resolve, admin }) {
       title: admin ? `Admin · ${m.business_name}` : 'Mon espace marchand',
       merchant: m,
       sessions: db.prepare('SELECT * FROM sessions WHERE merchant_id = ? ORDER BY weekday, start_time').all(m.id),
+      reports: db
+        .prepare('SELECT * FROM reports WHERE merchant_id = ? ORDER BY created_at DESC LIMIT 10')
+        .all(m.id)
+        .map((x) => ({ ...x, when: new Date(x.created_at.replace(' ', 'T') + 'Z').toLocaleString('fr-FR', { timeZone: 'Europe/Paris', dateStyle: 'short', timeStyle: 'short' }) })),
       categories: db.prepare('SELECT id, name, icon FROM categories ORDER BY name').all(),
       admin,
       base: req.baseUrl,
@@ -87,8 +92,10 @@ module.exports = function makeManage({ resolve, admin }) {
     if (f.email && !EMAIL_RE.test(f.email)) errs.push('E-mail de contact invalide.');
     const showEmail = b.show_email ? 1 : 0;
     const showPhone = b.show_phone ? 1 : 0;
+    const notifyWa = b.notify_whatsapp ? 1 : 0;
     if (showEmail && !f.email) errs.push('Renseignez un e-mail pour pouvoir l’afficher.');
     if (showPhone && !f.phone) errs.push('Renseignez un téléphone pour pouvoir l’afficher.');
+    if (notifyWa && !normalizePhone(f.phone)) errs.push('Pour recevoir les alertes WhatsApp, renseignez un numéro valide (ex. 06 12 34 56 78 ou +33 6 12 34 56 78).');
     if (errs.length) {
       if (req.file) removeFile(req.file.filename);
       req.flash('error', errs.join(' '));
@@ -104,8 +111,8 @@ module.exports = function makeManage({ resolve, admin }) {
     }
     db.prepare(
       `UPDATE merchants SET business_name=?, category_id=?, description=?, photo=?, first_name=?, last_name=?,
-         email=?, phone=?, show_email=?, show_phone=? WHERE id=?`
-    ).run(f.business_name, +b.category_id, f.description, photo, f.first_name, f.last_name, f.email, f.phone, showEmail, showPhone, m.id);
+         email=?, phone=?, show_email=?, show_phone=?, notify_whatsapp=? WHERE id=?`
+    ).run(f.business_name, +b.category_id, f.description, photo, f.first_name, f.last_name, f.email, f.phone, showEmail, showPhone, notifyWa, m.id);
     req.flash('success', 'Profil enregistré.');
     res.redirect(req.baseUrl);
   });
@@ -134,6 +141,22 @@ module.exports = function makeManage({ resolve, admin }) {
       req.merchant.id, address, shortAddress, lat, lng, weekday, start, end
     );
     req.flash('success', 'Session de vente ajoutée.');
+    res.redirect(req.baseUrl + '#sessions');
+  });
+
+  // Suspendre / réactiver une session (vacances, maladie…) : une session suspendue disparaît de la carte,
+  // de la fiche publique et de la fiche imprimable, mais reste dans l'espace du marchand.
+  r.post('/sessions/:sid/etat', (req, res) => {
+    const active = req.body.active === '0' ? 0 : 1;
+    const done = db.prepare('UPDATE sessions SET active = ? WHERE id = ? AND merchant_id = ?').run(active, +req.params.sid, req.merchant.id).changes;
+    if (done) req.flash('success', active ? 'Session réactivée : elle réapparaît sur la carte.' : 'Session suspendue : elle n’apparaît plus sur la carte.');
+    res.redirect(req.baseUrl + '#sessions');
+  });
+
+  r.post('/sessions-etat', (req, res) => {
+    const active = req.body.active === '0' ? 0 : 1;
+    db.prepare('UPDATE sessions SET active = ? WHERE merchant_id = ?').run(active, req.merchant.id);
+    req.flash('success', active ? 'Toutes vos sessions sont réactivées.' : 'Toutes vos sessions sont suspendues : vous n’apparaissez plus sur la carte.');
     res.redirect(req.baseUrl + '#sessions');
   });
 

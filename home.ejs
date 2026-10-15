@@ -38,7 +38,26 @@
   <div id="resultPill" class="pill" role="status">Chargement…</div>
 </div>
 
-<script>window.CATEGORIES = <%- categoriesJson %>;</script>
+<div id="reportModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="reportTitle">
+  <div class="modal-box">
+    <h2 id="reportTitle">🚩 Signaler une absence</h2>
+    <p class="muted small" id="reportIntro"></p>
+    <form id="reportForm" class="form">
+      <fieldset id="reportSessions" class="report-sessions"></fieldset>
+      <label>Précision (facultatif)
+        <textarea name="comment" rows="2" maxlength="300" placeholder="Ex. Personne sur place, stand fermé…"></textarea>
+      </label>
+      <input type="text" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p id="reportMsg" class="small" role="status"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-light" id="reportCancel">Annuler</button>
+        <button type="submit" class="btn" id="reportSend">Envoyer le signalement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>window.CATEGORIES = <%- categoriesJson %>; window.CSRF = <%- JSON.stringify(csrfToken) %>;</script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/js/map.js"></script>
 <%- include('foot') %>

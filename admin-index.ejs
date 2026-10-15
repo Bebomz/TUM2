@@ -5,10 +5,12 @@
     <div class="card stat"><b><%= stats.merchants %></b><span>marchands</span></div>
     <div class="card stat"><b><%= stats.sessions %></b><span>sessions de vente</span></div>
     <div class="card stat"><b><%= stats.categories %></b><span>catégories</span></div>
+    <div class="card stat"><b><%= stats.reports %></b><span>signalements à traiter</span></div>
   </div>
   <div class="actions">
     <a class="btn" href="/admin/marchands">Gérer les marchands</a>
     <a class="btn btn-light" href="/admin/categories">Gérer les catégories</a>
+    <a class="btn btn-light" href="/admin/signalements">🚩 Signalements<%= stats.reports ? ' (' + stats.reports + ')' : '' %></a>
     <a class="btn btn-light" href="/admin/marchands/nouveau">+ Nouveau marchand</a>
   </div>
 </main>
