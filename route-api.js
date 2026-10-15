@@ -23,7 +23,7 @@ r.get('/sessions', (req, res) => {
   const lng = parseFloat(req.query.lng);
   const radius = parseFloat(req.query.radius);
 
-  let sql = `SELECT s.address, s.lat, s.lng, s.weekday, s.start_time, s.end_time,
+  let sql = `SELECT s.address, s.short_address, s.lat, s.lng, s.weekday, s.start_time, s.end_time,
       m.id AS mid, m.slug, m.business_name, m.photo,
       c.id AS cid, c.name AS cname, c.color, c.icon
     FROM sessions s

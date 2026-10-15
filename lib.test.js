@@ -90,3 +90,12 @@ test('validations util', () => {
   assert.equal(slugify('Boulangerie Léa & Fils !'), 'boulangerie-lea-fils');
   assert.equal(slugify('***'), 'marchand');
 });
+
+test('adresse courte : celle enregistrée, sinon repli sur l’adresse complète', () => {
+  const withShort = { ...row(1, 48.85, 2.35, 1), short_address: '12 Place de la Victoire, Bordeaux' };
+  assert.equal(groupByPlace([withShort])[0].short, '12 Place de la Victoire, Bordeaux');
+  const fallback = { ...row(2, 44.0, 1.0, 1), address: '12, Place de la Victoire, Saint-Michel, Bordeaux, France' };
+  assert.equal(groupByPlace([fallback])[0].short, '12 Place de la Victoire');
+  const noNumber = { ...row(3, 45.0, 3.0, 1), address: 'Marché des Capucins, Bordeaux, Gironde' };
+  assert.equal(groupByPlace([noNumber])[0].short, 'Marché des Capucins, Bordeaux');
+});

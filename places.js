@@ -7,6 +7,13 @@
 // (les adresses saisies différemment pour une même place donnent des coordonnées voisines).
 const { haversine } = require('./util');
 
+// Adresse courte : celle enregistrée, sinon repli sur les deux premiers segments de l'adresse complète
+function shortOf(row) {
+  if (row.short_address) return row.short_address;
+  const parts = String(row.address || '').split(',').map((x) => x.trim()).filter(Boolean);
+  return /^\d+\w?$/.test(parts[0] || '') && parts[1] ? `${parts[0]} ${parts[1]}` : parts.slice(0, 2).join(', ');
+}
+
 const MERGE_KM = 0.025; // 25 m
 const CELL = 0.0005; // ~55 m en latitude : un voisinage 3x3 couvre toujours MERGE_KM
 
@@ -30,7 +37,7 @@ function groupByPlace(rows) {
   for (const x of rows) {
     let p = findPlace(x.lat, x.lng);
     if (!p) {
-      p = { lat: x.lat, lng: x.lng, address: x.address, merchants: new Map() };
+      p = { lat: x.lat, lng: x.lng, address: x.address, short: shortOf(x), merchants: new Map() };
       places.push(p);
       const key = `${Math.floor(x.lat / CELL)},${Math.floor(x.lng / CELL)}`;
       if (!grid.has(key)) grid.set(key, []);
@@ -55,6 +62,7 @@ function groupByPlace(rows) {
     lat: p.lat,
     lng: p.lng,
     address: p.address,
+    short: p.short,
     count: p.merchants.size,
     merchants: [...p.merchants.values()],
   }));

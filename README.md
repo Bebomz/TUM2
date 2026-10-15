@@ -18,7 +18,7 @@ En production, définissez `ADMIN_EMAIL` et `ADMIN_PASSWORD`.
 
 ## Fonctionnalités
 
-- **Carte** : marqueurs en goutte inversée avec l'icône (emoji) et la couleur de la catégorie ; au même endroit, un seul marqueur avec le **nombre de marchands distincts** (plusieurs sessions d'un même marchand = 1). Filtres : jour (par défaut aujourd'hui), catégories, distance (par défaut 10 km autour de la position du visiteur), recherche d'une ville.
+- **Carte** : au clic sur un marqueur, mini fiche (photo, nom, catégorie, horaires, adresse courte, bouton « Y aller », lien vers la fiche complète). Marqueurs en goutte inversée avec l'icône (emoji) et la couleur de la catégorie ; au même endroit, un seul marqueur avec le **nombre de marchands distincts** (plusieurs sessions d'un même marchand = 1). Filtres : jour (par défaut aujourd'hui), catégories, distance (par défaut 10 km autour de la position du visiteur), recherche d'une ville.
 - **Espace marchand** : inscription, connexion, mot de passe oublié (lien par e-mail), profil, photo, contact affiché ou non, sessions de vente avec **vérification de l'adresse** et aperçu/ajustement du repère sur une carte avant validation, suppression du compte.
 - **Fiche marchand** `/marchand/<slug>` : uniquement les informations choisies par le marchand ; version imprimable A4 avec bannière du site et **QR code** vers la fiche (`/marchand/<slug>/imprimer`).
 - **Admin** `/admin` : catégories (nom, icône, couleur) et marchands (création, modification, sessions, suppression).

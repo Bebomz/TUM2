@@ -116,6 +116,7 @@ module.exports = function makeManage({ resolve, admin }) {
     const lat = parseFloat(b.lat);
     const lng = parseFloat(b.lng);
     const address = String(b.address || '').trim().slice(0, 250);
+    const shortAddress = String(b.short_address || '').trim().slice(0, 120);
     const start = String(b.start_time || '');
     const end = String(b.end_time || '');
     const errs = [];
@@ -129,8 +130,8 @@ module.exports = function makeManage({ resolve, admin }) {
       req.flash('error', errs.join(' '));
       return res.redirect(req.baseUrl + '#sessions');
     }
-    db.prepare('INSERT INTO sessions (merchant_id, address, lat, lng, weekday, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
-      req.merchant.id, address, lat, lng, weekday, start, end
+    db.prepare('INSERT INTO sessions (merchant_id, address, short_address, lat, lng, weekday, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+      req.merchant.id, address, shortAddress, lat, lng, weekday, start, end
     );
     req.flash('success', 'Session de vente ajoutée.');
     res.redirect(req.baseUrl + '#sessions');

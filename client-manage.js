@@ -7,12 +7,13 @@
   var submit = document.getElementById('addSession');
   var latI = document.getElementById('lat');
   var lngI = document.getElementById('lng');
+  var shortI = document.getElementById('shortAddr');
   var status = document.getElementById('addrStatus');
   var map = null;
   var marker = null;
 
   function reset() {
-    latI.value = ''; lngI.value = '';
+    latI.value = ''; lngI.value = ''; shortI.value = '';
     submit.disabled = true;
     box.hidden = true;
     status.textContent = '';
@@ -49,6 +50,7 @@
     addr.value = r.label.slice(0, 250);
     latI.value = r.lat.toFixed(6);
     lngI.value = r.lng.toFixed(6);
+    shortI.value = r.short || '';
     list.innerHTML = '';
     submit.disabled = false;
     if (r.hasNumber) {

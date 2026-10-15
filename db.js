@@ -58,6 +58,11 @@ CREATE INDEX IF NOT EXISTS idx_sessions_weekday ON sessions(weekday);
 CREATE INDEX IF NOT EXISTS idx_sessions_merchant ON sessions(merchant_id);
 `);
 
+// Migration : adresse courte (numéro, rue, ville) affichée dans la mini fiche de la carte
+if (!db.prepare("PRAGMA table_info(sessions)").all().some((c) => c.name === 'short_address')) {
+  db.exec('ALTER TABLE sessions ADD COLUMN short_address TEXT');
+}
+
 // Catégories par défaut
 if (db.prepare('SELECT COUNT(*) n FROM categories').get().n === 0) {
   const ins = db.prepare('INSERT INTO categories (name, color, icon) VALUES (?, ?, ?)');

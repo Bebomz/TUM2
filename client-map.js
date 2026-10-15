@@ -49,18 +49,33 @@
     });
   }
 
+  // ---------- Mini fiche affichée au clic sur un marqueur ----------
+  // Marchand : photo, nom, catégorie, horaires. Lieu : adresse courte + "Y aller". Puis "Voir la fiche".
+  function hoursLines(m) {
+    return m.sessions.map(function (s) {
+      return (state.day === 0 ? DAYS[s.weekday] + ' ' : '') + s.start + '–' + s.end;
+    });
+  }
+  function addrHtml(loc) {
+    var dest = loc.lat + ',' + loc.lng;
+    return '<div class="pm-addr"><span class="pm-addr-text">📍 ' + esc(loc.short || loc.address) + '</span>' +
+      '<a class="btn btn-sm" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&amp;destination=' + esc(dest) + '">🧭 Y aller</a></div>';
+  }
+  function merchantHtml(m) {
+    var img = m.photo
+      ? '<img src="/uploads/' + encodeURIComponent(m.photo) + '" alt="" loading="lazy">'
+      : '<span class="ph" style="background:' + esc(m.category.color) + '">' + esc(m.category.icon) + '</span>';
+    return '<div class="pm-head">' + img + '<div class="pm-info"><b>' + esc(m.name) + '</b>' +
+      '<span class="pm-cat" style="background:' + esc(m.category.color) + '">' + esc(m.category.icon) + ' ' + esc(m.category.name) + '</span>' +
+      '<span class="pm-hours">🕒 ' + hoursLines(m).map(esc).join('<br>') + '</span></div></div>';
+  }
   function popupHtml(loc) {
-    var html = '<div class="popup"><div class="popup-addr">📍 ' + esc(loc.address) + '</div>';
+    var html = '<div class="popup">';
+    if (loc.count > 1) html += addrHtml(loc); // plusieurs marchands : l'adresse est commune, en tête
     loc.merchants.forEach(function (m) {
-      var times = m.sessions.map(function (s) {
-        return (state.day === 0 ? DAYS[s.weekday] + ' ' : '') + s.start + '–' + s.end;
-      }).join(' · ');
-      var img = m.photo
-        ? '<img src="/uploads/' + encodeURIComponent(m.photo) + '" alt="" loading="lazy">'
-        : '<span class="ph" style="background:' + esc(m.category.color) + '">' + esc(m.category.icon) + '</span>';
-      html += '<a class="popup-m" href="/marchand/' + encodeURIComponent(m.slug) + '">' + img +
-        '<span><b>' + esc(m.name) + '</b><small style="color:' + esc(m.category.color) + '">' + esc(m.category.icon) + ' ' + esc(m.category.name) +
-        '</small><small>' + esc(times) + '</small></span></a>';
+      html += '<div class="pm">' + merchantHtml(m);
+      if (loc.count === 1) html += addrHtml(loc);
+      html += '<a class="btn btn-light btn-sm pm-fiche" href="/marchand/' + encodeURIComponent(m.slug) + '">Voir la fiche complète</a></div>';
     });
     return html + '</div>';
   }
@@ -84,7 +99,7 @@
     var pts = [];
     data.locations.forEach(function (loc) {
       var mk = L.marker([loc.lat, loc.lng], { icon: makeIcon(loc), riseOnHover: true });
-      mk.bindPopup(popupHtml(loc), { maxWidth: 280, minWidth: 220 });
+      mk.bindPopup(popupHtml(loc), { maxWidth: 300, minWidth: 250 });
       markers.addLayer(mk);
       pts.push([loc.lat, loc.lng]);
     });

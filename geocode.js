@@ -3,6 +3,15 @@ const cache = new Map();
 let chain = Promise.resolve();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// "12 Place de la Victoire, Bordeaux" à partir des détails d'adresse Nominatim
+function shortLabel(r) {
+  const a = r.address || {};
+  const road = a.road || a.pedestrian || a.square || a.footway || a.path || a.cycleway || a.residential || a.neighbourhood || '';
+  const city = a.city || a.town || a.village || a.municipality || a.hamlet || '';
+  const s = [[a.house_number, road].filter(Boolean).join(' '), city].filter(Boolean).join(', ');
+  return s || String(r.display_name || '').split(',').slice(0, 2).map((x) => x.trim()).join(', ');
+}
+
 async function query(q) {
   const url = new URL('https://nominatim.openstreetmap.org/search');
   url.searchParams.set('format', 'jsonv2');
@@ -24,6 +33,7 @@ async function query(q) {
   const rows = await res.json();
   return rows.map((r) => ({
     label: r.display_name,
+    short: shortLabel(r),
     lat: Number(r.lat),
     lng: Number(r.lon),
     hasNumber: Boolean(r.address && r.address.house_number),
