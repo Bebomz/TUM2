@@ -49,3 +49,7 @@ Tous les fichiers sont à la racine (aucun sous-dossier) :
 - `*.ejs` : pages (`admin-*.ejs` pour l'administration, `head.ejs`/`foot.ejs`/`footer.ejs` : parties communes).
 - `style.css`, `print.css`, `client-*.js` : fichiers du navigateur. Ils sont servis via une liste blanche dans `server.js` (URL `/css/…` et `/js/…`) : si vous ajoutez un fichier côté navigateur, ajoutez-le à `ASSETS`.
 - `lib.test.js` : tests (`npm test`).
+
+## Données de démonstration (région bordelaise)
+
+`npm run seed:demo` crée 30 marchands **fictifs** (2 à 4 sessions chacun, sur de vraies places et centres-villes de Bordeaux et de sa région) ; relancer la commande les recrée sans doublon. `npm run seed:demo:remove` les supprime. Les comptes sont `demo01@demo.trouverunmarchand.test` … `demo30@…` avec le mot de passe `demo1234`, et les téléphones utilisent les plages fictives de l'ARCEP. Ne lancez pas cette commande sur la base de production réelle, ou supprimez-les ensuite (aussi possible depuis l'espace admin).

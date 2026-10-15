@@ -99,3 +99,73 @@ test('adresse courte : celle enregistrée, sinon repli sur l’adresse complète
   const noNumber = { ...row(3, 45.0, 3.0, 1), address: 'Marché des Capucins, Bordeaux, Gironde' };
   assert.equal(groupByPlace([noNumber])[0].short, 'Marché des Capucins, Bordeaux');
 });
+
+// ---------- Données de démonstration (région bordelaise) ----------
+const fs = require('node:fs');
+const { buildDemo, seedDemo, removeDemo, DOMAIN } = require('./demo-data');
+
+test('démo : 30 marchands valides, 2 à 4 sessions, région bordelaise', () => {
+  const data = buildDemo();
+  assert.equal(data.length, 30);
+  assert.equal(new Set(data.map((m) => m.slug)).size, 30, 'slugs uniques');
+  assert.equal(new Set(data.map((m) => m.email)).size, 30, 'e-mails uniques');
+  const knownCats = [...fs.readFileSync('./db.js', 'utf8').matchAll(/\['([^']+)', '#[0-9A-Fa-f]{6}', '[^']+'\]/g)].map((x) => x[1]);
+  assert.ok(knownCats.length >= 9);
+  for (const m of data) {
+    assert.ok(knownCats.includes(m.category), `catégorie inconnue : ${m.category}`);
+    assert.ok(m.sessions.length >= 2 && m.sessions.length <= 4, `${m.name} : ${m.sessions.length} sessions`);
+    assert.equal(new Set(m.sessions.map((s) => s.weekday)).size, m.sessions.length, `${m.name} : un jour en double`);
+    assert.ok(new Set(m.sessions.map((s) => s.place)).size <= 3);
+    for (const s of m.sessions) {
+      assert.ok(s.weekday >= 1 && s.weekday <= 7);
+      assert.ok(TIME_RE.test(s.start) && TIME_RE.test(s.end) && s.end > s.start);
+      assert.ok(s.lat > 44.6 && s.lat < 45.0 && s.lng > -1.25 && s.lng < -0.1, 'hors région bordelaise');
+    }
+  }
+  assert.deepEqual(buildDemo(), data, 'déterministe');
+});
+
+const hasSqlite = (() => { try { require('node:sqlite'); return true; } catch (e) { return false; } })();
+test('démo : insertion sur le vrai schéma, cascade, relance sans doublon, comptage par lieu', { skip: !hasSqlite && 'node:sqlite indisponible' }, () => {
+  const { DatabaseSync } = require('node:sqlite');
+  const src = fs.readFileSync('./db.js', 'utf8');
+  const raw = new DatabaseSync(':memory:');
+  raw.exec(src.match(/db\.exec\(`([\s\S]*?)`\);/)[1]);
+  raw.exec('ALTER TABLE sessions ADD COLUMN short_address TEXT'); // migration de db.js
+  const ins = raw.prepare('INSERT INTO categories (name, color, icon) VALUES (?, ?, ?)');
+  for (const m of src.matchAll(/\['([^']+)', '(#[0-9A-Fa-f]{6})', '([^']+)'\]/g)) ins.run(m[1], m[2], m[3]);
+  const db = {
+    prepare: (sql) => raw.prepare(sql),
+    transaction: (fn) => () => { raw.exec('BEGIN'); try { fn(); raw.exec('COMMIT'); } catch (e) { raw.exec('ROLLBACK'); throw e; } },
+  };
+  const n = (t) => raw.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n;
+
+  const r = seedDemo(db, 'hash');
+  assert.equal(r.merchants, 30);
+  assert.equal(n('merchants'), 30);
+  assert.equal(n('sessions'), r.sessions);
+  seedDemo(db, 'hash'); // relance : pas de doublon
+  assert.equal(n('merchants'), 30);
+  assert.equal(n('sessions'), r.sessions);
+
+  // Même requête que /api/sessions, sans filtre de jour : count = marchands distincts par lieu
+  const rows = raw.prepare(`SELECT s.address, s.short_address, s.lat, s.lng, s.weekday, s.start_time, s.end_time,
+      m.id AS mid, m.slug, m.business_name, m.photo, c.id AS cid, c.name AS cname, c.color, c.icon
+    FROM sessions s JOIN merchants m ON m.id = s.merchant_id JOIN categories c ON c.id = m.category_id
+    ORDER BY s.weekday, s.start_time`).all();
+  const places = groupByPlace(rows);
+  for (const p of places) {
+    assert.equal(p.count, new Set(p.merchants.map((m) => m.id)).size);
+    assert.ok(p.short && p.short.length > 3);
+  }
+  assert.ok(places.length >= 8 && places.length <= 20, `lieux : ${places.length}`);
+  assert.ok(places.some((p) => p.merchants.some((m) => m.sessions.length >= 2) ), 'un marchand avec 2 sessions au même lieu (compté 1 fois)');
+  // un samedi : au moins un lieu avec plusieurs marchands (marqueur avec nombre)
+  const sat = groupByPlace(rows.filter((x) => x.weekday === 6));
+  assert.ok(Math.max(...sat.map((p) => p.count)) >= 3, 'cluster le samedi');
+
+  assert.equal(removeDemo(db), 30);
+  assert.equal(n('users'), 0);
+  assert.equal(n('merchants'), 0, 'cascade users -> merchants');
+  assert.equal(n('sessions'), 0, 'cascade merchants -> sessions');
+});

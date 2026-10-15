@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "seed:demo": "node seed-demo.js",
+    "seed:demo:remove": "node seed-demo.js --remove"
   },
   "engines": {
     "node": ">=20"
